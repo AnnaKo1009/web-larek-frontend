@@ -50,7 +50,7 @@ export interface IProduct {
     image: string;
     title: string;
     category: string;
-    price: number;
+    price: number | null;
 }
 ```
 
@@ -147,7 +147,7 @@ export interface IOrder extends IUserForm {
   Также в классе есть методы для взаимодействия с данными:   
   - setFieldData <T extends keyof IUserForm>(field: T, value: IUserForm[T]): void - метод для сохранения данных вводимых пользователем
   - clearFrom():void - метод для очистки полей формы
-  - checkValidation(data: Record<keyof IUserForm, string>): boolean; - проверяет объект с данными пользователя на валидность
+  - checkValidation(): boolean; - проверяет объект с данными пользователя на валидность
 
 ### Классы представления
 Все классы представления отвечают за отображение внутри контейнера (DOM-элемент) передаваемых в них данных.
@@ -213,7 +213,7 @@ export interface IOrder extends IUserForm {
 Методы класса:
 - render(): HTMLElement - генерирует разметку формы
 - disableButtons(): void - отключает активность кнопки далее пока не заполнены все поля формы
-
+- setError(value: string): void - метод установки ошибки
 
 #### Класс ContactsForm
 Отвечает за отображение формы с вводом телефона и имейла.
@@ -227,7 +227,7 @@ export interface IOrder extends IUserForm {
 Методы класса:
 - render(): HTMLElement - генерирует разметку формы
 - disableButtons(): void - отключает активность кнопки далее пока не заполнены все поля формы
-А также сеттеры и геттеры для проверки валидности ввода и вывода сообщения с ошибкой.
+- setError(value: string): void - метод установки ошибки
 
 
 #### Класс Basket
@@ -241,7 +241,7 @@ export interface IOrder extends IUserForm {
 Методы:
 - setTotalPrice(value: number): void - записывает стоимость товаров в корзине
 - setList(value: HTMLElement[]): void - устанавливает разметку для списка карточек
-- disableButton(): void - метод, который отключает кнопку Оформить, если корзина пуста
+- toggleButton(value: boolean): void - переключает кнопку (активность/неактивность)
 
 #### Класс Success
 Управляет отображением удачного заказа в модальном окне. Выводит сообщение об успешном оформлении заказа, а также стоимость покупки и кнопку За новыми покупками!
