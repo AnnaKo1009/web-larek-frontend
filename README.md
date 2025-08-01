@@ -42,6 +42,15 @@ yarn build
 ```
 ## Данные и типы данных, используемые в приложении
 
+Для данных, которые приходят с сервера
+
+```
+export interface ApiResponse {
+    total: number;
+    items: IProduct[],
+}
+```
+
 Товар
 ```
 export interface IProduct {
@@ -49,15 +58,15 @@ export interface IProduct {
     description: string;
     image: string;
     title: string;
-    category: string;
-    price: number | null;
+    category: ProductType;
+    price: number;
 }
 ```
 
 Форма с данными пользователя
 ```
 export interface IUserForm {
-    payment: string;
+    payment: PaymentMethod;
     address: string;
     email: string;
     phone: string;
@@ -67,14 +76,19 @@ export interface IUserForm {
 Каталог товаров
 ```
 export interface IProductList {
-    cards: IProduct[];
+    getProducts(): IProduct[]; 
+    setProducts(value: IProduct[]): void;
 }
 ```
 
 Корзина
 ```
 export interface IBasket {
-    basketGoods: IProduct[];
+    getBasketList(): IProduct[];
+    addToBasket(item: IProduct): void;
+    removeFromBasket(id: string): void;
+    getTotalAmount(): number;
+    getTotalPrice(): number;
 }
 ```
 
@@ -85,6 +99,14 @@ export interface IOrder extends IUserForm {
     items: string[];
 }
 ``` 
+
+Для результата успешного оформления заказа
+```
+export interface IOrderResult {
+    id: string;
+    total: number;
+}
+```
 
 ## Архитектура приложения
 
@@ -115,7 +137,7 @@ export interface IOrder extends IUserForm {
 В полях класса хранятся следующие данные:
  - protected cards: IProduct[] массив объектов карточек с товарами
 
- Также в классе есть метод для взаимодействия с данными:
+ Также в классе есть методы для взаимодействия с данными:
  - getProductById (productId: string): IProduct - возвращает карточку товара по ее id;
  - setProducts (value: IProduct[]):void - сохраняет массив товаров
  - getProducts ():IProduct[] - возвращает массив карточек
@@ -130,10 +152,13 @@ export interface IOrder extends IUserForm {
   Также в классе есть методы для взаимодействия с данными:   
  - addToBasket(item: IProduct): void - добавляет товар в корзину и вызывает событие  изменения массива с товарами в корзине 
  - removeFromBasket(id: string): void - убирает товар из корзины и вызывает событие  изменения массива с товарами в корзине
+ - isBasketEmpty(): boolean - проверяет пустая ли корзина
+ - isProductIn(productId: string): boolean - проверяет наличие товара в корзине
  - getTotalAmount(): number - возвращает количество товаров в корзине
  - getTotalPrice(): number - возвращает сумму всех товаров в корзине
  - getBasketList(): IProduct[] - возвращает массив товаров в корзине 
  - clearBasket(): void - очищает корзину
+ - private emitChangeEvent(): void - метод для отправки события 
 
  #### Класс UserData
  Класс отвечает за хранение и логику работы с данными о пользователе и его заказе.
@@ -145,9 +170,13 @@ export interface IOrder extends IUserForm {
   - protected phone: string - телефон пользователя
 
   Также в классе есть методы для взаимодействия с данными:   
+  - getFieldData(): IUserForm - метод для получения данных вводимых пользователем
   - setFieldData <T extends keyof IUserForm>(field: T, value: IUserForm[T]): void - метод для сохранения данных вводимых пользователем
   - clearFrom():void - метод для очистки полей формы
-  - checkValidation(): boolean; - проверяет объект с данными пользователя на валидность
+  - checkValidation(): FormErrors; - проверяет объект с данными пользователя на валидность
+  - getError(field: keyof IUserForm): string | undefined - получает сообщение об ошибке для конкретного поля формы
+  - getAllErrors(): typeof this.errors - получает все текущие ошибки формы в виде объекта
+  - private clearError(field: keyof IUserForm): void - очищает ошибки поля при его изменении 
 
 ### Классы представления
 Все классы представления отвечают за отображение внутри контейнера (DOM-элемент) передаваемых в них данных.
@@ -175,14 +204,13 @@ export interface IOrder extends IUserForm {
 
 Поля класса:
  - protected content: HTMLElement - элемент модального окна
- - protected events: IEvents - брокер событий
  - protected closeButton: HTMLButtonElement - кнопка крестик
 
  Методы:
  - setContent(value: HTMLElement): void - устанавливает контент модального окна
  - open(): void - открытие модального окна
  - close(): void - закрытие модального окна
- - render(): HTMLElement - генерирует разметку модального окна
+ - renderContent(): HTMLElement - генерирует разметку модального окна
 
  #### Класс Card
 Отвечает за отображение карточки в модальном окне, задавая в ней данные названия, описания, изображение, катетогии товара и цены. В конструктор класса передается DOM-элемент темплейта. В классе устанавливаются слушатели на все интерактивные элементы, в результате взаимодействия с которыми генерируются соответствующие события.
@@ -194,11 +222,21 @@ export interface IOrder extends IUserForm {
 - protected category?: HTMLElement - категория товара
 - protected price: HTMLElement - цена товара
 - protected description?: HTMLElement - описание товара
+- protected button?: HTMLButtonElement - кнопка удаления/добавления в корзину
+- protected id: string - id карточки
+
 
 Методы: 
-- setData(cardData: IProduct): void - заполняет атрибуты элементов карточки данными
-- render(): HTMLElement - возвращает полностью заполненную карточку с слушателями
-Сеттер и Геттер сохраняет и  возвращает уникальный id карточки товара.
+- setTitle(value: string): void - заполняет заголовок карточки данными
+- setDescription(value: string): void - заплдняет описание товара
+- setCategory(value: ProductType): void - устанавливает категорию товара
+- setPrice(value: number): void - заполняет цену товара
+- setProductImage(value: string): void - устанавливает картинку товара в карточку
+- getId(): string - получает id карточки
+-  setId(value: string) - сохраняет id
+-  toggleButton(inBasket: boolean): void - переключает текст кнопки (В корзину/Удалить из корзины)
+- renderCard(): HTMLElement - возвращает полностью заполненную карточку с слушателями
+
 
 
 #### Класс OrderForm
@@ -206,28 +244,34 @@ export interface IOrder extends IUserForm {
 Конструктор кроме темплейта принимает экземпляр `EventEmitter` для инициализации событий.  
 Поля класса: 
 - protected address: HTMLInputElement - элемент поля ввода адреса
-- protected paymentMethodButton: HTMLButtonElement - элемент кнопок раздела способ оплаты
-- protected submit: HTMLButtonElement - кнопка Далее
-- protected errors: HTMLElement - текст ошибки
+- protected offlinePayment: HTMLButtonElement - кнопка оплаты наличными
+- protected onlinePayment: HTMLButtonElement - кнопка оплаты онлайн
 
 Методы класса:
 - render(): HTMLElement - генерирует разметку формы
-- disableButtons(): void - отключает активность кнопки далее пока не заполнены все поля формы
-- setError(value: string): void - метод установки ошибки
+- protected togglePaymentMethodButton(value: PaymentMethod): void - переключает метод оплаты
 
 #### Класс ContactsForm
 Отвечает за отображение формы с вводом телефона и имейла.
 Конструктор кроме темплейта принимает экземпляр `EventEmitter` для инициализации событий. 
 Поля класса:
-- protected phone: HTMLInputElement - элемент поля ввода телефона
-- protected email: HTMLInputElement - элемент поля ввода почты
-- protected submit: HTMLButtonElement - кнопка Далее
-- protected errors: HTMLElement - текст ошибки
+- protected phone: string - поле ввода телефона
+- protected email: string - поле ввода почты
 
 Методы класса:
-- render(): HTMLElement - генерирует разметку формы
-- disableButtons(): void - отключает активность кнопки далее пока не заполнены все поля формы
-- setError(value: string): void - метод установки ошибки
+- render(state: Partial<IContactsForm> & IFormCommon) - генерирует разметку формы
+
+#### Класс FormCommon
+Отвечает за общие моменты при создании форм заказа.
+Поля класса:
+- protected submit: HTMLButtonElement - кнопка сабмита
+- protected formErrors: HTMLElement - поле вывода ошибок формы
+
+Методы класса:
+- onInputChange(field: keyof T, value: string): void - генерация события для поля формы
+- setValid(value: boolean) - метод управляет состоянием кнопки отправки формы (submit) на основе валидности формы
+- setErrors(value: string) - отображает текст ошибок валидации в специальном блоке формы
+- render(state: Partial<T> & IFormCommon) - метод выполняет динамическое обновление состояния формы на основе переданных данных
 
 
 #### Класс Basket
@@ -241,20 +285,22 @@ export interface IOrder extends IUserForm {
 Методы:
 - setTotalPrice(value: number): void - записывает стоимость товаров в корзине
 - setList(value: HTMLElement[]): void - устанавливает разметку для списка карточек
-- toggleButton(value: boolean): void - переключает кнопку (активность/неактивность)
+- setIndex(items: HTMLElement[]) - устанавливает индекс каждому элементу корзины
+- renderBasket(items:HTMLElement[], total: number) - генерируем разметку
 
 #### Класс Success
 Управляет отображением удачного заказа в модальном окне. Выводит сообщение об успешном оформлении заказа, а также стоимость покупки и кнопку За новыми покупками!
 Конструктор кроме темплейта принимает экземпляр `EventEmitter` для инициализации событий. 
 Поля класса:
-- nextPurchaseButton: HTMLButtonElement - кнопка За новыми покупками!
+- protected furtherButton: HTMLButtonElement; - кнопка За новыми покупками!
+- protected total: HTMLElement - общая стоимость покупок
 
 Метод:
 - setTotal(value: number): void - записывает итоговую стоимость покупок в заказе
 
 ### Слой коммуникации
 
-#### Класс ShopAPI
+#### Класс AppAPI
 Принимает в конструктор экземпляр класса Арі и предоставляет методы реализующие взаимодействие с бэкендом сервиса.
 
 ## Взаимодействие компонентов
@@ -267,19 +313,20 @@ export interface IOrder extends IUserForm {
  - `cards:changed` - изменение массива карточек
  - `basket:changed` - изменение массива товаров, лежащих в корзине
 
+
  *События, возникающие при взаимодействии пользователя с интерфейсом (генерируются классами, отвечающими за представление)*
- - `card:select` - выбор карточки товара для отображения в модальном окне
  - `card:open` - открытие модального окна с карточкой товара
  - `basket:open` - открытие модального окна - корзины с товарами
- - `form:open` - открытие модального окна с необходимостью заполнить данные пользователя
- - `success:open` - открытие модального окна успешной покупки
- - `item-add:submit` - сохранение товара в корзине
- - `item-remove:submit` - удаление товара из корзины
- - `basket:submit` - событие, генерируемое нажатием кнопки Оформить
- - `order:input` - ввод данных в форме с адресом пользователя
- - `contacts:input` - ввод данных в форме с телефоном и почтой(контактами)
- - `order:validation` - событие, сообщающее о необходимости валидации формы с адресом
- - `contacts:validation` - событие, сообщающее о необходимости валидации формы с контактами
- - `order:submit` - событие, генерируемое нажатием кнопки Далее
- - `contacts:submit` - событие, генерируемое нажатием кнопки Оплатить
- - `success:close` - событие, генерируемое нажатием кнопки За новыми покупками
+ - `form:open` - открытие модального окна с необходимостью заполнить данные пользователя (при клике на кнопку Оформить)
+ - `form:change` - изменение значений введенных в поле формы 
+ - `basket-item:add` - добавление товара в корзину
+ - `basket-item:delete` - удаление товара из корзины
+ - `order:submit` - событие, генерируемое нажатием кнопки Далее, заполнение формы заказа
+ - `contacts:submit` - событие, генерируемое нажатием кнопки Оплатить, окончание заполнения формы заказа
+ - `/^order\..*: change/` - измение способа оплаты
+ - `/^contacts\..*: change/` - изменения  полей формы контактов
+ - `basket:delete` - удаление товара из списка в корзине
+ - `modal:open` - модальное окно открыто
+ - `modal:close` - модальное окно закрыто
+
+

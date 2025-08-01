@@ -49,6 +49,7 @@ export function cloneTemplate<T extends HTMLElement>(query: string | HTMLTemplat
     return template.content.firstElementChild.cloneNode(true) as T;
 }
 
+
 export function bem(block: string, element?: string, modifier?: string): { name: string, class: string } {
     let name = block;
     if (element) name += `__${element}`;
