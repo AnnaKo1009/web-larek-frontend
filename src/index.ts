@@ -100,12 +100,12 @@ events.on('card:open', (item: IProduct) => {
 
 // Открытие корзины
 events.on('basket:open', () => {
-  const basketItems = basketData.getBasketList().map((item: IProduct) => {
+ const basketItems = basketData.getBasketList().map((item: IProduct, index) => {
     const basketElement = new Card('card', cloneTemplate(cardBasketTemplate), {
-      onClick: () => events.emit('basket:delete', item)
+        onClick: () => events.emit('basket:delete', item)
     });
-    return basketElement.renderCard(item);
-  });
+    return basketElement.renderCard(item, index); // передаем индекс
+});
   const basketClone = cloneTemplate(basketTemplate);
   const tempBasket = new Basket(basketClone, events);
   tempBasket.renderBasket(basketItems, basketData.getTotalPrice());

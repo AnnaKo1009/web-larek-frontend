@@ -40,19 +40,10 @@ export class Basket extends Component<IBasketView> {
         this.setText(this.totalPrice, `${total.toString()} синапсов`);
     }
 
-
-    setIndex(items: HTMLElement[]) {
-        items.forEach((item, index) => {
-            const indexElement = item.querySelector('.basket__item-index');
-            indexElement.textContent = (index + 1).toString();
-            }
-        );
-    }
     
     renderBasket(items:HTMLElement[], total: number) {
         this.setList(items);
         this.setTotalPrice(total);
-        this.setIndex(items);
         this.orderButton.disabled = total <= 0;
         return this.container
     }

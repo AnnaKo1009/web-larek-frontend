@@ -234,8 +234,10 @@ export interface IOrderResult {
 - setProductImage(value: string): void - устанавливает картинку товара в карточку
 - getId(): string - получает id карточки
 -  setId(value: string) - сохраняет id
--  toggleButton(inBasket: boolean): void - переключает текст кнопки (В корзину/Удалить из корзины)
+- toggleButton(inBasket: boolean): void - переключает текст кнопки (В корзину/Удалить из корзины)
+- setIndex(value: number): void - устанавливает индекс для карточки в корзине
 - renderCard(): HTMLElement - возвращает полностью заполненную карточку с слушателями
+
 
 
 
@@ -285,7 +287,6 @@ export interface IOrderResult {
 Методы:
 - setTotalPrice(value: number): void - записывает стоимость товаров в корзине
 - setList(value: HTMLElement[]): void - устанавливает разметку для списка карточек
-- setIndex(items: HTMLElement[]) - устанавливает индекс каждому элементу корзины
 - renderBasket(items:HTMLElement[], total: number) - генерируем разметку
 
 #### Класс Success

@@ -16,6 +16,7 @@ export interface ICard {
     setProductImage(value: string): void;
     setTitle(value: string): void;
     setPrice(value: number): void;
+    setIndex(value: number): void;
 
     getId(): string;
 }
@@ -71,17 +72,17 @@ export class Card extends Component<ICard> {
         if (this.category) {
             this.setText(this.category, value);
             const classList = this.category.classList;
-        Array.from(classList).forEach(className => {
-            if (className.startsWith('card__category_')) {
-                classList.remove(className);
-            }
-        });
-             this.category.classList.add(categoryIcons[value]);
+            Array.from(classList).forEach(className => {
+                if (className.startsWith('card__category_')) {
+                    classList.remove(className);
+                }
+            });
+            this.category.classList.add(categoryIcons[value]);
 
         }
     }
 
-      // Установка цены товара
+    // Установка цены товара
     protected setPrice(value: number): void {
         if (!value) {
             this.setText(this.price, 'Бесценно');
@@ -94,10 +95,18 @@ export class Card extends Component<ICard> {
         }
     }
 
-      // Установка изображения товара
+    // Установка изображения товара
     protected setProductImage(value: string): void {
         if (this.image) {
             this.setImage(this.image, value);
+        }
+    }
+
+    // Установка индекса
+    protected setIndex(value: number): void {
+        const indexElement = this.container.querySelector('.basket__item-index') as HTMLElement;
+        if (indexElement) {
+            this.setText(indexElement, (value + 1).toString());
         }
     }
 
@@ -117,13 +126,15 @@ export class Card extends Component<ICard> {
     }
 
     // рендерим карточку
-    renderCard(item: IProduct): HTMLElement {
+    renderCard(item: IProduct, index?: number): HTMLElement {
         this.setId(item.id);
         this.setTitle(item.title);
         this.setCategory(item.category);
         this.setProductImage(item.image);
         this.setPrice(item.price);
         this.setDescription(item.description);
+        this.setIndex(index);
+
         return this.container;
     }
 }
